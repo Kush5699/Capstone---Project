@@ -5,8 +5,6 @@
 
 ![CodeResidency Banner](assets/banner.png)
 
-This project was built for the **Kaggle Agents Intensive - Capstone Project**, demonstrating advanced multi-agent orchestration, tool use, and session management.
-
 ## Problem Statement
 Traditional self-paced coding education often feels isolated and theoretical. Learners watch videos and solve isolated algorithmic puzzles, but they rarely experience the dynamics of a real-world software engineering environment. They lack the structured guidance of a manager, the technical mentorship of a senior engineer, and the rigorous feedback of a code review process. This gap between learning and doing leaves many aspiring developers unprepared for the collaborative and complex nature of professional software development, leading to "tutorial hell" and a lack of confidence in building real applications.
 
