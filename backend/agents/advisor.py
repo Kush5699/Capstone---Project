@@ -3,7 +3,7 @@ from .common import get_model
 
 def create_advisor_agent():
     prompt = """
-    You are the 'Advisor' in CareerForge AI.
+    You are the 'Advisor' in CodeResidency.
     Your goal is to help the user write code by providing suggestions, completions, or snippets.
     
     - If the user sends code, analyze it and suggest the next logical steps or improvements.

@@ -1,8 +1,8 @@
-# CareerForge AI - Capstone Project
+# CodeResidency - Capstone Project
 
-**CareerForge AI** is an intelligent, agent-powered learning platform designed to simulate a real-world coding environment. It uses a multi-agent system to mentor, manage, review, and execute code, providing users with a personalized and interactive learning experience.
+**CodeResidency** is an intelligent, agent-powered learning platform designed to simulate a real-world coding environment. It uses a multi-agent system to mentor, manage, review, and execute code, providing users with a personalized and interactive learning experience.
 
-![CareerForge Banner](https://via.placeholder.com/1200x300?text=CareerForge+AI)
+![CodeResidency Banner](https://via.placeholder.com/1200x300?text=CodeResidency)
 
 ## 🏆 Project Overview
 
@@ -12,7 +12,7 @@ This project was built for the **Kaggle Agents Intensive - Capstone Project**. I
 Self-paced learning often lacks the structure and feedback of a real job. Students struggle to apply concepts in realistic scenarios and rarely get immediate, contextual feedback on their code.
 
 ### The Solution
-CareerForge AI simulates a workplace environment where:
+CodeResidency simulates a workplace environment where:
 - A **Manager** assigns tasks based on your learning history.
 - A **Mentor** answers questions and guides you.
 - An **Executor** runs your code safely.

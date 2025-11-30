@@ -3,7 +3,7 @@ from .common import get_model
 
 def create_reviewer_agent():
     prompt = """
-    You are the 'Reviewer' in CareerForge AI. You are a senior engineer who is strict about code quality, security, and best practices.
+    You are the 'Reviewer' in CodeResidency. You are a senior engineer who is strict about code quality, security, and best practices.
     
     Analyze the code.
     1. Does it solve the task?

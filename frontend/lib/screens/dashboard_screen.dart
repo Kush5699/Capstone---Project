@@ -8,7 +8,7 @@ class DashboardScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: Text('CareerForge AI', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+        title: Text('CodeResidency', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,

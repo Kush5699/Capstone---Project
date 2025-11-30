@@ -4,7 +4,7 @@ from tools import execute_python_code
 
 def create_executor_agent():
     prompt = """
-    You are the 'Executor' in CareerForge AI.
+    You are the 'Executor' in CodeResidency.
     Your SOLE purpose is to execute Python code provided by the user and return the output.
     
     - You have access to a tool `execute_python_code`. USE IT.

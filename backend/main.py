@@ -64,7 +64,7 @@ TASKS = {}
 
 @app.get("/")
 def read_root():
-    return {"message": "CareerForge AI Backend is running with Google ADK"}
+    return {"message": "CodeResidency Backend is running with Google ADK"}
 
 @app.get("/topics", response_model=list[Topic])
 def get_topics():
@@ -127,7 +127,7 @@ async def generate_task(topic_id: str):
         
         # Ensure session exists
         try:
-            await session_service.create_session(session_id=session_id, app_name="CareerForge", user_id="user_1")
+            await session_service.create_session(session_id=session_id, app_name="CodeResidency", user_id="user_1")
         except Exception:
             # Likely already exists
             pass
@@ -138,7 +138,7 @@ async def generate_task(topic_id: str):
         # We can simulate a user message asking for a task with context.
         
         user_message = types.Content(role="user", parts=[types.Part(text=prompt)])
-        runner = Runner(agent=manager_agent, session_service=session_service, app_name="CareerForge")
+        runner = Runner(agent=manager_agent, session_service=session_service, app_name="CodeResidency")
         
         response_text = ""
         async for chunk in runner.run_async(user_id="user_1", session_id=session_id, new_message=user_message):
@@ -253,13 +253,13 @@ async def chat_endpoint(request: AgentRequest):
         # OR just create it once at startup? No, user might be dynamic.
         # Let's just await create_session and wrap in try-except.
         try:
-            await session_service.create_session(session_id=session_id, app_name="CareerForge", user_id=user_id)
+            await session_service.create_session(session_id=session_id, app_name="CodeResidency", user_id=user_id)
         except Exception:
             # Likely already exists
             pass
 
         # 1. Orchestrator decides who handles it
-        orchestrator_runner = Runner(agent=orchestrator_agent, session_service=session_service, app_name="CareerForge")
+        orchestrator_runner = Runner(agent=orchestrator_agent, session_service=session_service, app_name="CodeResidency")
         routing_decision = ""
         
         # Wrap message
@@ -306,7 +306,7 @@ async def chat_endpoint(request: AgentRequest):
             target_agent_name = "MENTOR"
 
         # 2. Run the target agent
-        runner = Runner(agent=target_agent, session_service=session_service, app_name="CareerForge")
+        runner = Runner(agent=target_agent, session_service=session_service, app_name="CodeResidency")
         response_text = ""
         
         # We need to send the message again to the target agent?
