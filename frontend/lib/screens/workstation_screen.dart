@@ -46,7 +46,7 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
   // Right area: flex fills remaining space and has a min size to avoid collapsing.
   final MultiSplitViewController _horizontalController = MultiSplitViewController(
     areas: [
-      Area(size: 300.0, min: 240.0, max: 420.0, data: 'left'),
+      Area(size: 300.0, min: 300.0, max: 600.0, data: 'left'),
       Area(flex: 1.0, min: 360.0, data: 'right'),
     ],
   );
