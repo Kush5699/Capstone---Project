@@ -143,9 +143,6 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
       if (_codeController.text.isEmpty) {
         // Use triple quotes for the initial code snippet so we keep the newlines.
         _codeController.text = '''
-import main
-
-def solution():
     print("Hello World")
 ''';
       }
@@ -162,16 +159,8 @@ def solution():
       'status': _currentTask!['status'] // Preserve status
     };
 
-    // Optimistic Update: Update local state immediately
-    setState(() {
-      final index = _tasks.indexWhere((t) => t['id'] == updatedTask['id']);
-      if (index != -1) {
-        _tasks[index] = updatedTask;
-      }
-    });
-
     await _apiService.updateTask(_currentTask!['id'], updatedTask);
-    _fetchTasks(); // Refresh list to show updates and sync with backend
+    _fetchTasks(); // Refresh list to show updates
   }
 
   void _getTask() async {
