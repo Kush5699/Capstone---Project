@@ -216,7 +216,7 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
 
     final message =
         "Review the following Python code submission. Provide feedback on correctness, style, and efficiency. If the code is correct and solves the task, explicitly state 'APPROVED' in the first line. Code:\n${_codeController.text}";
-    final response = await _apiService.sendMessage(message, []);
+    final response = await _apiService.sendMessage(message, [], topicId: _selectedTopicId);
 
     bool isApproved = response.contains("APPROVED");
 
@@ -249,7 +249,7 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
     );
 
     final message = "I am writing this code. Please provide suggestions, completions, or improvements. Code:\n${_codeController.text}";
-    final response = await _apiService.sendMessage(message, []);
+    final response = await _apiService.sendMessage(message, [], topicId: _selectedTopicId);
 
     // Close loading dialog
     Navigator.pop(context);
