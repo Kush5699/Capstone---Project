@@ -3,7 +3,7 @@
 ## Project Overview
 **CodeResidency** is an immersive, agent-powered workplace simulation that bridges the critical gap between self-paced tutorials and professional software engineering. It places you in a realistic job environment where a team of specialized AI agents—including a Manager, Mentor, Reviewer, and Executor—collaborates to assign structured tasks, provide instant feedback, and enforce industry best practices. It effectively acts as your personal internship to transform you from a student into a job-ready developer.
 
-![CodeResidency Banner](https://via.placeholder.com/1200x300?text=CodeResidency)
+![CodeResidency Banner](assets/banner.png)
 
 This project was built for the **Kaggle Agents Intensive - Capstone Project**, demonstrating advanced multi-agent orchestration, tool use, and session management.
 
