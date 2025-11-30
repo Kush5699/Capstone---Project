@@ -162,8 +162,16 @@ def solution():
       'status': _currentTask!['status'] // Preserve status
     };
 
+    // Optimistic Update: Update local state immediately
+    setState(() {
+      final index = _tasks.indexWhere((t) => t['id'] == updatedTask['id']);
+      if (index != -1) {
+        _tasks[index] = updatedTask;
+      }
+    });
+
     await _apiService.updateTask(_currentTask!['id'], updatedTask);
-    _fetchTasks(); // Refresh list to show updates
+    _fetchTasks(); // Refresh list to show updates and sync with backend
   }
 
   void _getTask() async {
