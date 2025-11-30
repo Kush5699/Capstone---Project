@@ -39,6 +39,30 @@ class ApiService {
     }
   }
 
+  Future<String> reviewCode(String code, String taskId, String? topicId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/review'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'code': code,
+          'task_id': taskId,
+          'topic_id': topicId ?? "default",
+        }),
+      );
+
+      print('Response status: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['response'];
+      } else {
+        throw Exception('Failed to load response: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error reviewing code: $e');
+    }
+  }
+
   Future<List<Map<String, dynamic>>> getTopics() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/topics'));

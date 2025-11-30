@@ -159,6 +159,14 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
       'status': _currentTask!['status'] // Preserve status
     };
 
+    // Optimistic Update: Update local state immediately
+    setState(() {
+      final index = _tasks.indexWhere((t) => t['id'] == updatedTask['id']);
+      if (index != -1) {
+        _tasks[index] = updatedTask;
+      }
+    });
+
     await _apiService.updateTask(_currentTask!['id'], updatedTask);
     _fetchTasks(); // Refresh list to show updates
   }
@@ -214,9 +222,21 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
     if (_codeController.text.isEmpty) return;
     setState(() => _isLoading = true);
 
-    final message =
-        "Review the following Python code submission. Provide feedback on correctness, style, and efficiency. If the code is correct and solves the task, explicitly state 'APPROVED' in the first line. Code:\n${_codeController.text}";
-    final response = await _apiService.sendMessage(message, [], topicId: _selectedTopicId);
+    // Use the new review endpoint which isolates feedback from classroom chat
+    // We pass the raw code, task ID, and topic ID.
+    // The backend constructs the prompt with the task description.
+    String response;
+    try {
+      if (_currentTask == null) {
+         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("No active task selected.")));
+         setState(() => _isLoading = false);
+         return;
+      }
+      
+      response = await _apiService.reviewCode(_codeController.text, _currentTask!['id'], _selectedTopicId);
+    } catch (e) {
+      response = "Error submitting code: $e";
+    }
 
     bool isApproved = response.contains("APPROVED");
 
@@ -231,6 +251,8 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
           SnackBar(content: Text("Task Completed! Great job!")),
         );
       } else {
+        // Save state even if not approved to persist feedback
+        _saveTaskState();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Code Submitted. Check Feedback.")),
         );

@@ -26,6 +26,11 @@ class ExecutionResponse(BaseModel):
     output: str
     error: str
 
+class ReviewRequest(BaseModel):
+    code: str
+    task_id: str
+    topic_id: str = "default"
+
 load_dotenv()
 
 app = FastAPI()
@@ -219,6 +224,64 @@ def execute_code(request: ExecutionRequest):
              
     except Exception as e:
         return ExecutionResponse(output="", error=str(e))
+
+@app.post("/review", response_model=AgentResponse)
+async def review_code(request: ReviewRequest):
+    try:
+        user_id = "user_1"
+        topic_id = request.topic_id
+        session_id = f"session_{topic_id}"
+        
+        # 1. Get Task Details
+        task = TASKS.get(request.task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+            
+        # 2. Construct Prompt
+        prompt = f"""
+        Review the following code submission for the task: "{task.title}".
+        
+        Task Description:
+        {task.description}
+        
+        User Code:
+        {request.code}
+        
+        Provide feedback on correctness, style, and efficiency. 
+        If the code is correct and solves the task, explicitly state 'APPROVED' in the first line.
+        """
+        
+        # 3. Run Reviewer Agent directly
+        # We use a temporary session or the same session but DO NOT add to history?
+        # If we use the same session, the agent might have context.
+        # But we want to avoid polluting the CHAT history shown in Classroom.
+        # The session history in ADK is separate from our `HISTORY` dict.
+        # So we can use the same session_id for agent context (if needed) but just NOT append to `HISTORY`.
+        
+        # Ensure session exists
+        try:
+            await session_service.create_session(session_id=session_id, app_name="CodeResidency", user_id=user_id)
+        except Exception:
+            pass
+            
+        runner = Runner(agent=reviewer_agent, session_service=session_service, app_name="CodeResidency")
+        user_message = types.Content(role="user", parts=[types.Part(text=prompt)])
+        
+        response_text = ""
+        async for chunk in runner.run_async(user_id=user_id, session_id=session_id, new_message=user_message):
+             if hasattr(chunk, 'content') and chunk.content and chunk.content.parts:
+                for part in chunk.content.parts:
+                    if part.text:
+                        response_text += part.text
+                        
+        # Do NOT add to HISTORY[topic_id]
+        
+        return AgentResponse(response=response_text, agent_type="REVIEWER")
+        
+    except Exception as e:
+        traceback.print_exc()
+        print(f"Error in review endpoint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/chat", response_model=AgentResponse)
 async def chat_endpoint(request: AgentRequest):
