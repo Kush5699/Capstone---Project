@@ -93,7 +93,7 @@ async def generate_task(topic_id: str):
         history = memory_bank.get_history(topic_id)
         
         context_text = f"Topic: {topic_title}\nChat History:\n"
-        for msg in history[-10:]: # Last 10 messages
+        for msg in history[-10:]:
             context_text += f"{msg['role']}: {msg['content']}\n"
             
         tasks_dict = memory_bank.get_tasks()
@@ -238,6 +238,13 @@ async def review_code(request: ReviewRequest):
         """
         
         logger.log("Reviewer", "Input", prompt)
+        
+        # 3. Run Reviewer Agent directly
+        # We use a temporary session or the same session but DO NOT add to history?
+        # If we use the same session, the agent might have context.
+        # But we want to avoid polluting the CHAT history shown in Classroom.
+        # The session history in ADK is separate from our `HISTORY` dict.
+        # So we can use the same session_id for agent context (if needed) but just NOT append to `HISTORY`.
         
         try:
             await session_service.create_session(session_id=session_id, app_name="CodeResidency", user_id=user_id)
