@@ -17,6 +17,10 @@ Core to CodeResidency is a sophisticated multi-agent system built using **Google
 ```mermaid
 graph TD
     User[User / Frontend] -->|Message| API[FastAPI Backend]
+    
+    API <-->|Load/Save| Memory[Memory Bank]
+    API -->|Log Events| Logger[Agent Logger]
+
     API -->|Session Context| Orch[Orchestrator Agent]
     
     Orch -->|Route: Question| Mentor[Mentor Agent]
@@ -39,6 +43,10 @@ graph TD
 *   **Code Reviewer (`reviewer_agent`)**: Analyzes code for correctness, style, efficiency, and best practices, providing constructive feedback similar to a professional Pull Request review.
 *   **Code Executor (`executor_agent`)**: The hands-on runtime environment. Safely executes user Python code and returns standard output and errors.
 *   **Orchestrator Agent**: The intelligent front-line interface that analyzes user interaction and routes it to the correct specialized agent.
+
+### Advanced Features
+*   **Long Term Memory**: A persistent storage system that saves all chat history, topics, and tasks to disk (`storage.json`). This ensures that the user's progress is never lost, even if the backend server is restarted.
+*   **Observability & Logging**: A comprehensive logging system that records every agent interaction, thought process, and decision to a structured log file (`agent_trace.jsonl`). This provides a "black box" recorder for debugging and understanding agent behavior.
 
 ## Essential Tools and Utilities
 The agents are equipped with specialized tools to perform their roles effectively:
