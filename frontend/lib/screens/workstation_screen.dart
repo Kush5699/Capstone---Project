@@ -11,6 +11,27 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import '../services/api_service.dart';
 
+// --- New Class for File State Management ---
+class FileTab {
+  String name;
+  String content;
+  final CodeController controller;
+  final dynamic language; // highlight mode
+
+  FileTab({
+    required this.name,
+    required this.content,
+    required this.language,
+  }) : controller = CodeController(
+          text: content,
+          language: language,
+        );
+
+  void updateContent() {
+    content = controller.text;
+  }
+}
+
 class WorkstationScreen extends StatefulWidget {
   @override
   _WorkstationScreenState createState() => _WorkstationScreenState();
@@ -19,13 +40,9 @@ class WorkstationScreen extends StatefulWidget {
 class _WorkstationScreenState extends State<WorkstationScreen> {
   final ApiService _apiService = ApiService();
 
-  // Editor State
-  List<Map<String, dynamic>> _openFiles = [
-    {'name': 'main.py', 'content': 'print("Hello World")', 'language': python}
-  ];
+  // Editor State - Now using List<FileTab>
+  List<FileTab> _openFiles = [];
   int _activeFileIndex = 0;
-
-  late CodeController _codeController;
 
   // Task & Feedback State
   String _taskContent = "Click 'Get New Task' to start your job simulation.";
@@ -41,9 +58,6 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
   List<Map<String, dynamic>> _tasks = [];
   Map<String, dynamic>? _currentTask;
 
-  // Use Area(size/min/max/flex/data) — matches multi_split_view >= 3.x API.
-  // Left area: initial pixel size 300, min 240px, max 420px.
-  // Right area: flex fills remaining space and has a min size to avoid collapsing.
   final MultiSplitViewController _horizontalController = MultiSplitViewController(
     areas: [
       Area(size: 300.0, min: 300.0, max: 600.0, data: 'left'),
@@ -51,7 +65,6 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
     ],
   );
 
-  // Vertical split for right side: top (editor) and bottom (terminal)
   final MultiSplitViewController _verticalController = MultiSplitViewController(
     areas: [
       Area(flex: 0.72, min: 200.0, data: 'top'),
@@ -68,45 +81,55 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
   }
 
   void _initializeEditor() {
-    _codeController = CodeController(
-      text: _openFiles[_activeFileIndex]['content'],
-      language: _openFiles[_activeFileIndex]['language'],
-    );
-    _codeController.addListener(() {
-      _openFiles[_activeFileIndex]['content'] = _codeController.text;
-    });
+    // Start with no files open.
+    // Files will be created when "Get New Task" is clicked.
   }
 
-  void _openFile(String name, String content, {mode}) {
-    if (mode == null) {
-      if (name.endsWith(".py")) mode = python;
-      else if (name.endsWith(".js")) mode = javascript;
-      else if (name.endsWith(".dart")) mode = dart;
-      else mode = python; // Default
+  // Helper to determine language mode from filename
+  dynamic _getModeForFile(String name) {
+    if (name.endsWith(".py")) return python;
+    if (name.endsWith(".js")) return javascript;
+    if (name.endsWith(".dart")) return dart;
+    return python; // Default
+  }
+
+  void _openFile(String name, String content, {dynamic mode}) {
+    mode ??= _getModeForFile(name);
+
+    // Check if file already open
+    int existingIndex = _openFiles.indexWhere((f) => f.name == name);
+    if (existingIndex != -1) {
+      _switchFile(existingIndex);
+      return;
     }
 
     setState(() {
-      _openFiles.add({'name': name, 'content': content, 'language': mode});
+      final newTab = FileTab(name: name, content: content, language: mode);
+      // Add listener to sync content back to the model (optional but good for safety)
+      newTab.controller.addListener(() {
+        newTab.updateContent();
+      });
+
+      _openFiles.add(newTab);
       _activeFileIndex = _openFiles.length - 1;
-      _codeController.text = content;
     });
   }
 
   void _closeFile(int index) {
-    if (_openFiles.length <= 1) return;
+    if (_openFiles.length <= 1) return; // Don't close the last file
     setState(() {
+      // Dispose controller to free resources
+      _openFiles[index].controller.dispose();
       _openFiles.removeAt(index);
       if (_activeFileIndex >= index) {
         _activeFileIndex = (_activeFileIndex - 1).clamp(0, _openFiles.length - 1);
       }
-      _codeController.text = _openFiles[_activeFileIndex]['content'];
     });
   }
 
   void _switchFile(int index) {
     setState(() {
       _activeFileIndex = index;
-      _codeController.text = _openFiles[index]['content'];
     });
   }
 
@@ -121,7 +144,6 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
   }
 
   Future<void> _fetchTasks() async {
-    // Fetch all tasks for the drawer
     final tasks = await _apiService.getTasks(null);
     setState(() {
       _tasks = tasks;
@@ -136,30 +158,44 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
 
     setState(() {
       _currentTask = task;
-      // Use explicit \n escapes rather than raw multiline to avoid accidental newline tokens.
       _taskContent = "## ${task['title']}\n\n${task['description']}";
-      _codeController.text = task['code'] ?? "";
       _feedbackContent = task['feedback'] ?? "Submit your code to receive feedback.";
-      if (_codeController.text.isEmpty) {
-        // Use triple quotes for the initial code snippet so we keep the newlines.
-        _codeController.text = '''
-    print("Hello World")
-''';
+      
+      String code = task['code'] ?? "";
+      if (code.isEmpty) {
+        code = 'print("Hello World")';
       }
+
+      // Create a unique filename for the task to avoid collisions
+      // e.g., "task_123.py"
+      String filename = "task_${task['id']}.py"; 
+      
+      // Open this file (this will switch to it if already open, or create new if not)
+      _openFile(filename, code, mode: python);
     });
   }
 
   void _saveTaskState() async {
     if (_currentTask == null) return;
 
+    // Get content from the *active* file controller if it matches the task,
+    // OR find the file tab corresponding to this task.
+    // For simplicity, we assume the user is working on the task file they just opened.
+    // Better: Find the tab named "task_{id}.py"
+    String filename = "task_${_currentTask!['id']}.py";
+    var taskTab = _openFiles.firstWhere(
+      (f) => f.name == filename, 
+      orElse: () => _openFiles[_activeFileIndex] // Fallback to active if not found (edge case)
+    );
+
     final updatedTask = {
       ..._currentTask!,
-      'code': _codeController.text,
+      'code': taskTab.controller.text,
       'feedback': _feedbackContent,
-      'status': _currentTask!['status'] // Preserve status
+      'status': _currentTask!['status']
     };
 
-    // Optimistic Update: Update local state immediately
+    // Optimistic Update
     setState(() {
       final index = _tasks.indexWhere((t) => t['id'] == updatedTask['id']);
       if (index != -1) {
@@ -168,7 +204,7 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
     });
 
     await _apiService.updateTask(_currentTask!['id'], updatedTask);
-    _fetchTasks(); // Refresh list to show updates
+    _fetchTasks();
   }
 
   void _getTask() async {
@@ -191,22 +227,26 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
   }
 
   void _runCode() async {
+    if (_openFiles.isEmpty) return;
+    
     setState(() {
       _isRunning = true;
-      _consoleOutput += "\n> Running ${_openFiles[_activeFileIndex]['name']}...\n";
+      _consoleOutput += "\n> Running ${_openFiles[_activeFileIndex].name}...\n";
     });
 
-    final result = await _apiService.executeCode(_codeController.text, "python");
+    // Run the code from the active controller
+    final codeToRun = _openFiles[_activeFileIndex].controller.text;
+    final result = await _apiService.executeCode(codeToRun, "python");
 
     setState(() {
       _isRunning = false;
       final out = result['output'];
       final err = result['error'];
       if (out != null && (out as String).isNotEmpty) {
-        _consoleOutput += out as String;
+        _consoleOutput += out;
       }
       if (err != null && (err as String).isNotEmpty) {
-        _consoleOutput += "\nError:\n${err}";
+        _consoleOutput += "\nError:\n$err";
       }
       _consoleOutput += "\n";
     });
@@ -219,12 +259,13 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
   }
 
   void _submitCode() async {
-    if (_codeController.text.isEmpty) return;
+    if (_openFiles.isEmpty) return;
+    
+    final activeController = _openFiles[_activeFileIndex].controller;
+    if (activeController.text.isEmpty) return;
+    
     setState(() => _isLoading = true);
 
-    // Use the new review endpoint which isolates feedback from classroom chat
-    // We pass the raw code, task ID, and topic ID.
-    // The backend constructs the prompt with the task description.
     String response;
     try {
       if (_currentTask == null) {
@@ -233,12 +274,15 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
          return;
       }
       
-      response = await _apiService.reviewCode(_codeController.text, _currentTask!['id'], _selectedTopicId);
+      response = await _apiService.reviewCode(activeController.text, _currentTask!['id'], _selectedTopicId);
     } catch (e) {
       response = "Error submitting code: $e";
     }
 
-    bool isApproved = response.contains("APPROVED");
+    if (!mounted) return;
+
+    // Make check case-insensitive to be more robust
+    bool isApproved = response.toUpperCase().contains("APPROVED");
 
     setState(() {
       _feedbackContent = response;
@@ -251,7 +295,6 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
           SnackBar(content: Text("Task Completed! Great job!")),
         );
       } else {
-        // Save state even if not approved to persist feedback
         _saveTaskState();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Code Submitted. Check Feedback.")),
@@ -261,22 +304,23 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
   }
 
   void _getSuggestions() async {
-    if (_codeController.text.isEmpty) return;
+    if (_openFiles.isEmpty) return;
+    final activeController = _openFiles[_activeFileIndex].controller;
+    
+    if (activeController.text.isEmpty) return;
 
-    // Show loading dialog
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => Center(child: CircularProgressIndicator()),
     );
 
-    final message = "I am writing this code. Please provide suggestions, completions, or improvements. Code:\n${_codeController.text}";
+    final message = "I am writing this code. Please provide suggestions, completions, or improvements. Code:\n${activeController.text}";
     final response = await _apiService.sendMessage(message, [], topicId: _selectedTopicId);
 
-    // Close loading dialog
+    if (!mounted) return;
     Navigator.pop(context);
 
-    // Show suggestions dialog
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -400,7 +444,7 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
                         child: Row(
                           children: [
                             Text(
-                              file['name'],
+                              file.name,
                               style: GoogleFonts.firaCode(
                                 color: isActive ? Colors.white : Colors.grey,
                                 fontSize: 13,
@@ -488,17 +532,20 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
                   color: Color(0xFF1E1E1E),
                   child: LayoutBuilder(
                     builder: (context, constraints) {
+                      if (_openFiles.isEmpty) {
+                        return Center(child: Text("No file open", style: TextStyle(color: Colors.grey)));
+                      }
+                      // KEY FIX: Use the controller from the active file tab
+                      // This ensures that when we switch tabs, we switch controllers, preserving state.
                       return SizedBox(
                         height: constraints.maxHeight,
                         width: double.infinity,
                         child: CodeField(
-                            controller: _codeController,
+                            controller: _openFiles[_activeFileIndex].controller,
                             textStyle: GoogleFonts.firaCode(
                               fontSize: 14,
                               color: Colors.white,
                             ),
-
-                            // These two flags prevent overflow
                             expands: true,
                             minLines: null,
                             maxLines: null,
@@ -535,7 +582,7 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
           Divider(color: Colors.grey[800], height: 1),
           Expanded(
             child: SingleChildScrollView(
-              reverse: true, // Auto-scroll to bottom
+              reverse: true,
               child: Text(
                 _consoleOutput,
                 style: GoogleFonts.firaCode(color: Colors.white, fontSize: 13),

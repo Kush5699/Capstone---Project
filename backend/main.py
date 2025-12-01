@@ -247,8 +247,11 @@ async def review_code(request: ReviewRequest):
         User Code:
         {request.code}
         
-        Provide feedback on correctness, style, and efficiency. 
-        If the code is correct and solves the task, explicitly state 'APPROVED' in the first line.
+        Provide feedback on correctness, style, and efficiency.
+        
+        IMPORTANT:
+        If the code is correct and solves the task, you MUST include the word 'APPROVED' (in all caps) in your response, preferably in a "Review Status" section.
+        If there are errors, use 'CHANGES REQUESTED'.
         """
         
         # 3. Run Reviewer Agent directly
