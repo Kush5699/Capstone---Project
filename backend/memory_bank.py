@@ -10,7 +10,6 @@ class MemoryBank:
         self.history: Dict[str, List[Dict[str, str]]] = {}
         self.tasks: Dict[str, Dict[str, Any]] = {} # Store as dict for JSON serialization
         
-        # Ensure directory exists
         os.makedirs(os.path.dirname(self.storage_path), exist_ok=True)
         self.load()
 
@@ -24,12 +23,10 @@ class MemoryBank:
                     self.tasks = data.get("tasks", {})
             except Exception as e:
                 print(f"Error loading memory bank: {e}")
-                # Initialize empty if error
                 self.topics = {}
                 self.history = {}
                 self.tasks = {}
         else:
-            # Initialize defaults
             self.topics = {"default": "General Chat"}
             self.history = {}
             self.tasks = {}
@@ -47,7 +44,6 @@ class MemoryBank:
         except Exception as e:
             print(f"Error saving memory bank: {e}")
 
-    # Helper methods to mimic the previous dict interface or provide better access
     
     def get_topics(self) -> Dict[str, str]:
         return self.topics
@@ -76,7 +72,6 @@ class MemoryBank:
         return self.tasks
 
     def add_task(self, task: Task):
-        # Convert Pydantic model to dict
         self.tasks[task.id] = task.dict()
         self.save()
         

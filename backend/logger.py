@@ -6,7 +6,6 @@ from typing import Any
 class AgentLogger:
     def __init__(self, log_path: str = "logs/agent_trace.jsonl"):
         self.log_path = log_path
-        # Ensure directory exists
         os.makedirs(os.path.dirname(self.log_path), exist_ok=True)
 
     def log(self, agent_name: str, event_type: str, details: Any):

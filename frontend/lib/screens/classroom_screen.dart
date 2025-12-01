@@ -162,7 +162,6 @@ class _ClassroomScreenState extends State<ClassroomScreen> {
                     trailing: IconButton(
                       icon: Icon(Icons.delete_outline, color: Colors.red[300]),
                       onPressed: () {
-                         // Confirm deletion
                          showDialog(
                            context: context,
                            builder: (context) => AlertDialog(

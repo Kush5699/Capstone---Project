@@ -45,7 +45,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize Agents and Services
 try:
     orchestrator_agent = create_orchestrator_agent()
     mentor_agent = create_mentor_agent()
@@ -55,7 +54,6 @@ try:
     advisor_agent = create_advisor_agent()
     session_service = get_session_service()
     
-    # Initialize Core Infrastructure
     memory_bank = MemoryBank()
     logger = AgentLogger()
     
@@ -90,7 +88,6 @@ async def get_history(topic_id: str):
 @app.post("/tasks/generate", response_model=Task)
 async def generate_task(topic_id: str):
     try:
-        # 1. Gather Context
         topics_dict = memory_bank.get_topics()
         topic_title = topics_dict.get(topic_id, "General")
         history = memory_bank.get_history(topic_id)
@@ -99,7 +96,6 @@ async def generate_task(topic_id: str):
         for msg in history[-10:]: # Last 10 messages
             context_text += f"{msg['role']}: {msg['content']}\n"
             
-        # 2. Check previous tasks
         tasks_dict = memory_bank.get_tasks()
         previous_tasks = [Task(**t) for t in tasks_dict.values() if t.get('topic_id') == topic_id]
         
@@ -108,7 +104,6 @@ async def generate_task(topic_id: str):
             for t in previous_tasks:
                 context_text += f"- {t.title}: {t.description}\n"
                 
-        # 3. Prompt Manager Agent
         prompt = f"""
         Based on the following learning context, generate a new, unique coding task for the user.
         The task should be relevant to what they have recently discussed or learned.
@@ -141,7 +136,6 @@ async def generate_task(topic_id: str):
                         
         logger.log("Manager", "Output", response_text)
                         
-        # 4. Parse Response
         title = "New Task"
         description = response_text
         
@@ -156,7 +150,6 @@ async def generate_task(topic_id: str):
         if title != "New Task":
             description = response_text.replace(f"Title: {title}", "").replace(f"**Title**: {title}", "").replace("Description:", "").replace("**Description**:", "").strip()
 
-        # 5. Create Task
         task_id = str(uuid.uuid4())
         new_task = Task(
             id=task_id,
@@ -184,7 +177,6 @@ def get_tasks(topic_id: str = None):
 def update_task(task_id: str, task_update: Task):
     tasks_dict = memory_bank.get_tasks()
     if task_id in tasks_dict:
-        # Update fields
         current_task_data = tasks_dict[task_id]
         current_task = Task(**current_task_data)
         
@@ -279,12 +271,10 @@ async def chat_endpoint(request: AgentRequest):
         topic_id = request.topic_id if request.topic_id else "default"
         session_id = f"session_{topic_id}"
         
-        # Ensure topic exists
         topics_dict = memory_bank.get_topics()
         if topic_id not in topics_dict:
             memory_bank.add_topic(topic_id, "Unknown Topic")
             
-        # Add User Message to History
         memory_bank.add_to_history(topic_id, {"role": "user", "content": request.message})
         logger.log("User", "Input", request.message)
         
@@ -293,7 +283,6 @@ async def chat_endpoint(request: AgentRequest):
         except Exception:
             pass
 
-        # 1. Orchestrator
         orchestrator_runner = Runner(agent=orchestrator_agent, session_service=session_service, app_name="CodeResidency")
         routing_decision = ""
         user_message = types.Content(role="user", parts=[types.Part(text=request.message)])
@@ -328,7 +317,6 @@ async def chat_endpoint(request: AgentRequest):
             target_agent = mentor_agent
             target_agent_name = "MENTOR"
 
-        # 2. Run target agent
         runner = Runner(agent=target_agent, session_service=session_service, app_name="CodeResidency")
         response_text = ""
         
@@ -338,7 +326,6 @@ async def chat_endpoint(request: AgentRequest):
                     if part.text:
                         response_text += part.text
 
-        # Add Agent Response to History
         memory_bank.add_to_history(topic_id, {"role": "agent", "content": response_text})
         logger.log(target_agent_name, "Output", response_text)
 

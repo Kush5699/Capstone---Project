@@ -8,11 +8,7 @@ def execute_python_code(code: str) -> str:
     This is a sandboxed execution (simulated via subprocess for this project).
     """
     try:
-        # Basic security check (very minimal, for demonstration only)
         if "import os" in code or "import subprocess" in code:
-             # Allow os/subprocess for now as it might be needed for some tasks, 
-             # but in a real app we would block this.
-             # For this hackathon project, we'll just warn or allow.
              pass
 
         result = subprocess.run(

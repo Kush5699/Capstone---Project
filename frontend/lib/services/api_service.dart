@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class ApiService {
-  // For Android Emulator, use 10.0.2.2. For Web/iOS/Desktop, use localhost.
   static String get baseUrl {
     if (kIsWeb) {
       return 'http://localhost:8000';

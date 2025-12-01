@@ -1,4 +1,3 @@
-// lib/screens/workstation_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:multi_split_view/multi_split_view.dart';
@@ -11,7 +10,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import '../services/api_service.dart';
 
-// --- New Class for File State Management ---
 class FileTab {
   String name;
   String content;
@@ -40,11 +38,9 @@ class WorkstationScreen extends StatefulWidget {
 class _WorkstationScreenState extends State<WorkstationScreen> {
   final ApiService _apiService = ApiService();
 
-  // Editor State - Now using List<FileTab>
   List<FileTab> _openFiles = [];
   int _activeFileIndex = 0;
 
-  // Task & Feedback State
   String _taskContent = "Click 'Get New Task' to start your job simulation.";
   String _feedbackContent = "Submit your code to receive feedback.";
   String _consoleOutput = "Console ready...\n";
@@ -81,11 +77,8 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
   }
 
   void _initializeEditor() {
-    // Start with no files open.
-    // Files will be created when "Get New Task" is clicked.
   }
 
-  // Helper to determine language mode from filename
   dynamic _getModeForFile(String name) {
     if (name.endsWith(".py")) return python;
     if (name.endsWith(".js")) return javascript;
@@ -96,7 +89,6 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
   void _openFile(String name, String content, {dynamic mode}) {
     mode ??= _getModeForFile(name);
 
-    // Check if file already open
     int existingIndex = _openFiles.indexWhere((f) => f.name == name);
     if (existingIndex != -1) {
       _switchFile(existingIndex);
@@ -105,7 +97,6 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
 
     setState(() {
       final newTab = FileTab(name: name, content: content, language: mode);
-      // Add listener to sync content back to the model (optional but good for safety)
       newTab.controller.addListener(() {
         newTab.updateContent();
       });
@@ -118,7 +109,6 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
   void _closeFile(int index) {
     if (_openFiles.length <= 1) return; // Don't close the last file
     setState(() {
-      // Dispose controller to free resources
       _openFiles[index].controller.dispose();
       _openFiles.removeAt(index);
       if (_activeFileIndex >= index) {
@@ -151,7 +141,6 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
   }
 
   void _selectTask(Map<String, dynamic> task) {
-    // Save current task state if exists
     if (_currentTask != null) {
       _saveTaskState();
     }
@@ -166,11 +155,8 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
         code = 'print("Hello World")';
       }
 
-      // Create a unique filename for the task to avoid collisions
-      // e.g., "task_123.py"
       String filename = "task_${task['id']}.py"; 
       
-      // Open this file (this will switch to it if already open, or create new if not)
       _openFile(filename, code, mode: python);
     });
   }
@@ -178,10 +164,6 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
   void _saveTaskState() async {
     if (_currentTask == null) return;
 
-    // Get content from the *active* file controller if it matches the task,
-    // OR find the file tab corresponding to this task.
-    // For simplicity, we assume the user is working on the task file they just opened.
-    // Better: Find the tab named "task_{id}.py"
     String filename = "task_${_currentTask!['id']}.py";
     var taskTab = _openFiles.firstWhere(
       (f) => f.name == filename, 
@@ -195,7 +177,6 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
       'status': _currentTask!['status']
     };
 
-    // Optimistic Update
     setState(() {
       final index = _tasks.indexWhere((t) => t['id'] == updatedTask['id']);
       if (index != -1) {
@@ -234,7 +215,6 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
       _consoleOutput += "\n> Running ${_openFiles[_activeFileIndex].name}...\n";
     });
 
-    // Run the code from the active controller
     final codeToRun = _openFiles[_activeFileIndex].controller.text;
     final result = await _apiService.executeCode(codeToRun, "python");
 
@@ -281,7 +261,6 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
 
     if (!mounted) return;
 
-    // Make check case-insensitive to be more robust
     bool isApproved = response.toUpperCase().contains("APPROVED");
 
     setState(() {
@@ -340,7 +319,6 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Left Panel: Tabs for Task and Feedback
     Widget leftPanel = DefaultTabController(
       length: 2,
       child: Column(
@@ -357,7 +335,6 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
           Expanded(
             child: TabBarView(
               children: [
-                // Task Tab
                 Column(
                   children: [
                     Padding(
@@ -402,7 +379,6 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
                     ),
                   ],
                 ),
-                // Feedback Tab
                 SingleChildScrollView(
                   padding: EdgeInsets.all(16),
                   child: MarkdownBody(data: _feedbackContent),
@@ -414,10 +390,8 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
       ),
     );
 
-    // Right Panel: Editor (Top) and Console (Bottom)
     Widget editorPanel = Column(
       children: [
-        // Editor Tab Bar
         Container(
           color: Color(0xFF1E1E1E),
           height: 35,
@@ -473,7 +447,6 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
             ],
           ),
         ),
-        // Editor Action Bar
         Container(
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           color: Color(0xFF2D2D2D),
@@ -517,7 +490,6 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
             ],
           ),
         ),
-        // Code Editor
         Expanded(
           child: CallbackShortcuts(
             bindings: {
@@ -535,8 +507,6 @@ class _WorkstationScreenState extends State<WorkstationScreen> {
                       if (_openFiles.isEmpty) {
                         return Center(child: Text("No file open", style: TextStyle(color: Colors.grey)));
                       }
-                      // KEY FIX: Use the controller from the active file tab
-                      // This ensures that when we switch tabs, we switch controllers, preserving state.
                       return SizedBox(
                         height: constraints.maxHeight,
                         width: double.infinity,
