@@ -239,13 +239,6 @@ async def review_code(request: ReviewRequest):
         
         logger.log("Reviewer", "Input", prompt)
         
-        # 3. Run Reviewer Agent directly
-        # We use a temporary session or the same session but DO NOT add to history?
-        # If we use the same session, the agent might have context.
-        # But we want to avoid polluting the CHAT history shown in Classroom.
-        # The session history in ADK is separate from our `HISTORY` dict.
-        # So we can use the same session_id for agent context (if needed) but just NOT append to `HISTORY`.
-        
         try:
             await session_service.create_session(session_id=session_id, app_name="CodeResidency", user_id=user_id)
         except Exception:
